@@ -64,18 +64,22 @@ COPY --from=builder /app/package*.json ./
 # Copy static files
 COPY public ./public
 
+# Copy test files (required for E2E test runner)
+COPY tests ./tests
+COPY vitest.config.ts ./
+
 # Create directories for test results and screenshots
 RUN mkdir -p test-results screenshots && chown -R appuser:appuser /app
 
 # Switch to non-root user
 USER appuser
 
-# Expose port
-EXPOSE 3000
+# Expose port (default 8080, can be overridden by PORT env var)
+EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/webhooks/health || exit 1
+# Health check using PORT env var (defaults to 8080)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-8080}/webhooks/health || exit 1
 
 # Start the app
 CMD ["node", "dist/index.js"]

@@ -70,8 +70,10 @@ async function main() {
   const useBrowserbase = !!(env.BROWSERBASE_API_KEY && env.BROWSERBASE_PROJECT_ID);
   const browserMode = useBrowserbase ? "Browserbase (cloud)" : "Local Chrome (headless)";
   
-  app.listen(port, () => {
-    console.log(`
+  const server = app.listen(port, () => {
+    try {
+      const portalUrlDisplay = env.PORTAL_URL ? env.PORTAL_URL.substring(0, 47).padEnd(49) : "Not configured".padEnd(49);
+      console.log(`
 ╔═══════════════════════════════════════════════════════════════╗
 ║                  Linear Stagehand Tests                       ║
 ╠═══════════════════════════════════════════════════════════════╣
@@ -80,10 +82,27 @@ async function main() {
 ║  Webhook:         POST /webhooks/linear                       ║
 ║  Health:          GET /webhooks/health                        ║
 ╠═══════════════════════════════════════════════════════════════╣
-║  Portal URL: ${env.PORTAL_URL.substring(0, 47).padEnd(49)}║
+║  Portal URL: ${portalUrlDisplay}║
 ║  Browser: ${browserMode.padEnd(51)}║
 ╚═══════════════════════════════════════════════════════════════╝
-    `);
+      `);
+    } catch (error) {
+      console.error("[Server] Error in startup callback:", error);
+    }
+  });
+
+  // Handle server errors
+  server.on("error", (error: NodeJS.ErrnoException) => {
+    console.error("[Server] Server error:", error);
+    if (error.code === "EADDRINUSE") {
+      console.error(`[Server] Port ${port} is already in use`);
+      process.exit(1);
+    }
+  });
+
+  // Keep the process alive
+  server.on("close", () => {
+    console.log("[Server] Server closed");
   });
 }
 
