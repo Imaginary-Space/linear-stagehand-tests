@@ -78,7 +78,8 @@ USER appuser
 EXPOSE 8080
 
 # Health check using PORT env var (defaults to 8080)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+# Increased start-period to 60s to allow for slower startup
+HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-8080}/webhooks/health || exit 1
 
 # Start the app

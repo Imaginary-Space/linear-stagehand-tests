@@ -14,12 +14,27 @@ process.on("unhandledRejection", (reason, promise) => {
 
 process.on("uncaughtException", (error) => {
   console.error("[Server] Uncaught Exception:", error);
+  console.error("[Server] Stack trace:", error.stack);
   // Don't exit for non-fatal errors
   if (error.message?.includes("ECONNRESET") || error.message?.includes("EPIPE")) {
     return; // Ignore connection reset errors
   }
-  // For truly fatal errors, we might want to exit
-  // process.exit(1);
+  // Log but don't exit - let the process try to recover
+  console.error("[Server] Attempting to continue after exception...");
+});
+
+// Monitor process health
+process.on("warning", (warning) => {
+  console.warn("[Server] Process warning:", warning.name, warning.message);
+});
+
+// Log when process is about to exit
+process.on("beforeExit", (code) => {
+  console.log(`[Server] Process beforeExit with code: ${code}`);
+});
+
+process.on("exit", (code) => {
+  console.log(`[Server] Process exit with code: ${code}`);
 });
 
 async function main() {
@@ -104,6 +119,15 @@ async function main() {
   server.on("close", () => {
     console.log("[Server] Server closed");
   });
+
+  // Heartbeat to confirm server is running (every 5 minutes)
+  const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000;
+  setInterval(() => {
+    const memUsage = process.memoryUsage();
+    const heapMB = Math.round(memUsage.heapUsed / 1024 / 1024);
+    const rssMB = Math.round(memUsage.rss / 1024 / 1024);
+    console.log(`[Server] Heartbeat - Memory: ${heapMB}MB heap, ${rssMB}MB RSS, Uptime: ${Math.round(process.uptime())}s`);
+  }, HEARTBEAT_INTERVAL_MS);
 }
 
 main().catch((err) => {
