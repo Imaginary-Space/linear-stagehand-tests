@@ -76,6 +76,10 @@ export async function setup() {
   // Use Browserbase for cloud deployments, local Chrome for development
   const useBrowserbase = !!(process.env.BROWSERBASE_API_KEY && process.env.BROWSERBASE_PROJECT_ID);
   
+  if (useBrowserbase) {
+    console.log("  → Using Browserbase for cloud browser automation");
+  }
+
   const stagehand = new Stagehand({
     env: useBrowserbase ? "BROWSERBASE" : "LOCAL",
     verbose: 0,
@@ -89,30 +93,12 @@ export async function setup() {
     }),
   });
   
-  if (useBrowserbase) {
-    console.log("  → Using Browserbase for cloud browser automation");
-  }
+  let initialized = false;
 
   try {
     await stagehand.init();
-  } catch (initError) {
-    const errorMessage = initError instanceof Error ? initError.message : String(initError);
+    initialized = true;
     
-    // Handle Browserbase concurrent session limit
-    if (errorMessage.includes("429") || errorMessage.includes("concurrent sessions")) {
-      console.error("\n❌ Browserbase session limit reached!");
-      console.error("   There may be an existing session still running.");
-      console.error("   Options:");
-      console.error("   1. Wait for the existing session to timeout (usually 5-10 min)");
-      console.error("   2. Manually close sessions at https://www.browserbase.com/sessions");
-      console.error("   3. Remove BROWSERBASE_* env vars to use local Chrome\n");
-      throw new Error("Browserbase concurrent session limit reached - see above for options");
-    }
-    
-    throw initError;
-  }
-
-  try {
     const page = stagehand.context.pages()[0];
 
     // Navigate to login
@@ -252,8 +238,31 @@ export async function setup() {
 
     const localStorageCount = Object.keys(localStorage).length;
     console.log(`  ✓ Logged in and saved ${cookies.length} cookies, ${localStorageCount} localStorage items\n`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Handle Browserbase concurrent session limit
+    if (errorMessage.includes("429") || errorMessage.includes("concurrent sessions") || errorMessage.includes("rate limit")) {
+      console.error("\n❌ Browserbase error!");
+      console.error(`   ${errorMessage}`);
+      console.error("   Options:");
+      console.error("   1. Wait for existing sessions to timeout (usually 5-10 min)");
+      console.error("   2. Close sessions at https://www.browserbase.com/sessions");
+      console.error("   3. Remove BROWSERBASE_* env vars to use local Chrome\n");
+      // Don't re-throw - let the process exit gracefully
+      throw new Error("Browserbase session limit or rate limit reached");
+    }
+    
+    throw error;
   } finally {
-    await stagehand.close();
+    // Only close if stagehand was successfully initialized
+    if (initialized) {
+      try {
+        await stagehand.close();
+      } catch (closeError) {
+        console.warn("  ⚠ Error closing stagehand:", closeError);
+      }
+    }
   }
 }
 

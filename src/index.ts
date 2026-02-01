@@ -6,6 +6,22 @@ import webhooksRouter from "./routes/webhooks.js";
 import apiRouter from "./routes/api.js";
 import { ensureDirectories } from "./services/storage.js";
 
+// Prevent unhandled rejections from crashing the server
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("[Server] Unhandled Rejection at:", promise, "reason:", reason);
+  // Don't exit - keep server running
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("[Server] Uncaught Exception:", error);
+  // Don't exit for non-fatal errors
+  if (error.message?.includes("ECONNRESET") || error.message?.includes("EPIPE")) {
+    return; // Ignore connection reset errors
+  }
+  // For truly fatal errors, we might want to exit
+  // process.exit(1);
+});
+
 async function main() {
   // Validate environment variables
   const envResult = EnvSchema.safeParse(process.env);
