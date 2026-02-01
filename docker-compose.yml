@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  stagehand-tests:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PORTAL_URL=${PORTAL_URL}
+      - PORTAL_USERNAME=${PORTAL_USERNAME}
+      - PORTAL_PASSWORD=${PORTAL_PASSWORD}
+      - LINEAR_WEBHOOK_SECRET=${LINEAR_WEBHOOK_SECRET}
+      - MAX_CONCURRENT_TESTS=${MAX_CONCURRENT_TESTS:-3}
+    volumes:
+      # Persist test results and screenshots
+      - ./test-results:/app/test-results
+      - ./screenshots:/app/screenshots
+    restart: unless-stopped
+    # Chrome needs more shared memory
+    shm_size: '2gb'
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/webhooks/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

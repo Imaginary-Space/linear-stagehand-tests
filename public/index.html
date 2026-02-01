@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stagehand Test Runner</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #0a0a0a;
+      color: #e5e5e5;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: #fff;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 2rem;
+    }
+
+    .panel {
+      background: #141414;
+      border: 1px solid #262626;
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    .panel h2 {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #a3a3a3;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      color: #a3a3a3;
+      margin-bottom: 0.5rem;
+    }
+
+    .config-info {
+      margin-bottom: 1rem;
+    }
+
+    .config-value {
+      background: #0a0a0a;
+      border: 1px solid #262626;
+      border-radius: 8px;
+      padding: 0.75rem;
+      color: #e5e5e5;
+      font-size: 0.875rem;
+      word-break: break-all;
+    }
+
+    input, textarea {
+      width: 100%;
+      background: #0a0a0a;
+      border: 1px solid #262626;
+      border-radius: 8px;
+      padding: 0.75rem;
+      color: #e5e5e5;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+      font-family: inherit;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    button {
+      width: 100%;
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #2563eb;
+    }
+
+    button:disabled {
+      background: #1e3a5f;
+      cursor: not-allowed;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      background: #0a0a0a;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #525252;
+    }
+
+    .status-dot.running {
+      background: #eab308;
+      animation: pulse 1.5s infinite;
+    }
+
+    .status-dot.passed {
+      background: #22c55e;
+    }
+
+    .status-dot.failed {
+      background: #ef4444;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .criteria-list {
+      list-style: none;
+    }
+
+    .criteria-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      background: #0a0a0a;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .criteria-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.75rem;
+    }
+
+    .criteria-icon.pending {
+      background: #262626;
+      color: #525252;
+    }
+
+    .criteria-icon.testing {
+      background: #422006;
+      color: #eab308;
+    }
+
+    .criteria-icon.passed {
+      background: #052e16;
+      color: #22c55e;
+    }
+
+    .criteria-icon.failed {
+      background: #450a0a;
+      color: #ef4444;
+    }
+
+    .criteria-content {
+      flex: 1;
+    }
+
+    .criteria-details {
+      color: #737373;
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+    .screenshots-panel {
+      height: calc(100vh - 6rem);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .screenshot-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .screenshot-card {
+      background: #0a0a0a;
+      border: 1px solid #262626;
+      border-radius: 8px;
+      overflow: hidden;
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    .screenshot-card img {
+      max-width: 100%;
+      max-height: calc(100vh - 12rem);
+      object-fit: contain;
+      display: block;
+    }
+
+    .screenshot-meta {
+      padding: 0.5rem 1rem;
+      font-size: 0.75rem;
+      color: #737373;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .empty-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      color: #525252;
+      font-size: 0.875rem;
+    }
+
+    .log {
+      background: #0a0a0a;
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.75rem;
+      max-height: 150px;
+      overflow-y: auto;
+      margin-top: 1rem;
+    }
+
+    .log-entry {
+      color: #525252;
+      margin-bottom: 0.25rem;
+    }
+
+    .log-entry.info {
+      color: #a3a3a3;
+    }
+
+    .log-entry.success {
+      color: #22c55e;
+    }
+
+    .log-entry.error {
+      color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Stagehand Test Runner</h1>
+    
+    <div class="grid">
+      <div class="left-column">
+        <div class="panel">
+          <h2>Test Configuration</h2>
+          
+          <div class="config-info">
+            <label>Portal</label>
+            <div class="config-value" id="portalDisplay">Loading...</div>
+          </div>
+          
+          <label for="criteria">Acceptance Criteria (one per line)</label>
+          <textarea id="criteria" placeholder="- [ ] User can see the login page
+- [ ] User can enter credentials
+- [ ] Dashboard loads after login"></textarea>
+          
+          <button id="runBtn" onclick="runTests()">Run Tests</button>
+        </div>
+
+        <div class="panel" style="margin-top: 1rem;">
+          <h2>Test Status</h2>
+          
+          <div class="status">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Idle</span>
+          </div>
+
+          <ul class="criteria-list" id="criteriaList">
+            <li class="empty-state">No tests running</li>
+          </ul>
+
+          <div class="log" id="log"></div>
+        </div>
+      </div>
+
+      <div class="panel screenshots-panel">
+        <h2>Live View <span id="screenshotCount"></span></h2>
+        <div class="screenshot-container" id="screenshotContainer">
+          <div class="empty-state">Live browser view will appear here during test execution</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentTestId = null;
+    let pollInterval = null;
+    let screenshotPollInterval = null;
+
+    function log(message, type = 'info') {
+      const logEl = document.getElementById('log');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function updateStatus(status, text) {
+      const dot = document.getElementById('statusDot');
+      const statusText = document.getElementById('statusText');
+      
+      dot.className = 'status-dot';
+      if (status) dot.classList.add(status);
+      statusText.textContent = text;
+    }
+
+    function updateCriteriaList(criteria, results = []) {
+      const list = document.getElementById('criteriaList');
+      
+      if (!criteria || criteria.length === 0) {
+        list.innerHTML = '<li class="empty-state">No tests running</li>';
+        return;
+      }
+
+      list.innerHTML = criteria.map((c, i) => {
+        const result = results[i];
+        let iconClass = 'pending';
+        let icon = '○';
+        let details = '';
+
+        if (result) {
+          if (result.passed) {
+            iconClass = 'passed';
+            icon = '✓';
+          } else {
+            iconClass = 'failed';
+            icon = '✗';
+          }
+          details = result.details || '';
+        } else if (i === results.length) {
+          iconClass = 'testing';
+          icon = '◐';
+        }
+
+        return `
+          <li class="criteria-item">
+            <div class="criteria-icon ${iconClass}">${icon}</div>
+            <div class="criteria-content">
+              ${c}
+              ${details ? `<div class="criteria-details">${details}</div>` : ''}
+            </div>
+          </li>
+        `;
+      }).join('');
+    }
+
+    function updateScreenshots(screenshots) {
+      const container = document.getElementById('screenshotContainer');
+      const count = document.getElementById('screenshotCount');
+      
+      if (screenshots.length === 0) {
+        count.textContent = '';
+        container.innerHTML = '<div class="empty-state">Live browser view will appear here during test execution</div>';
+        return;
+      }
+
+      // Show only the latest screenshot
+      const latest = screenshots[screenshots.length - 1];
+      const filename = latest.split('/').pop();
+      count.textContent = `(${screenshots.length} captured)`;
+
+      container.innerHTML = `
+        <div class="screenshot-card">
+          <img src="/screenshots/${filename}?t=${Date.now()}" alt="Live view">
+          <div class="screenshot-meta">
+            <span>Screenshot ${screenshots.length}</span>
+            <span>${new Date().toLocaleTimeString()}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    async function runTests() {
+      const btn = document.getElementById('runBtn');
+      const criteriaText = document.getElementById('criteria').value;
+
+      if (!criteriaText.trim()) {
+        log('Please enter acceptance criteria', 'error');
+        return;
+      }
+
+      // Parse criteria
+      const criteria = criteriaText
+        .split('\n')
+        .map(line => line.replace(/^[-*]\s*\[[ x]\]\s*/, '').trim())
+        .filter(line => line.length > 0);
+
+      if (criteria.length === 0) {
+        log('No valid criteria found', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Running...';
+      
+      updateStatus('running', 'Starting tests...');
+      updateCriteriaList(criteria);
+      updateScreenshots([]);
+      
+      log('Starting test run...');
+
+      try {
+        const response = await fetch('/api/run-test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ criteria })
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to start test');
+        }
+
+        currentTestId = data.testId;
+        log(`Test started: ${currentTestId}`);
+
+        // Start polling for status
+        pollInterval = setInterval(pollStatus, 2000);
+        screenshotPollInterval = setInterval(pollScreenshots, 1500);
+
+      } catch (err) {
+        log(err.message, 'error');
+        updateStatus('failed', 'Error');
+        btn.disabled = false;
+        btn.textContent = 'Run Tests';
+      }
+    }
+
+    async function pollStatus() {
+      if (!currentTestId) return;
+
+      try {
+        const response = await fetch(`/api/test-status/${currentTestId}`);
+        const data = await response.json();
+
+        if (data.status === 'queued') {
+          updateStatus('running', `Queued (position ${data.queuePosition})...`);
+          updateCriteriaList(data.criteria, data.results);
+        } else if (data.status === 'running') {
+          updateStatus('running', `Testing... (${data.results?.length || 0}/${data.criteria?.length || 0})`);
+          updateCriteriaList(data.criteria, data.results);
+        } else if (data.status === 'completed') {
+          clearInterval(pollInterval);
+          clearInterval(screenshotPollInterval);
+          
+          const result = data.result;
+          updateStatus(result.status, result.status === 'passed' ? 'All tests passed!' : 'Tests failed');
+          updateCriteriaList(result.acceptanceCriteria, result.results);
+          updateScreenshots(result.screenshots || []);
+          
+          log(`Test completed: ${result.status}`, result.status === 'passed' ? 'success' : 'error');
+          
+          document.getElementById('runBtn').disabled = false;
+          document.getElementById('runBtn').textContent = 'Run Tests';
+          currentTestId = null;
+        }
+      } catch (err) {
+        console.error('Poll error:', err);
+      }
+    }
+
+    async function pollScreenshots() {
+      if (!currentTestId) return;
+
+      try {
+        const response = await fetch(`/api/test-screenshots/${currentTestId}`);
+        const data = await response.json();
+        updateScreenshots(data.screenshots || []);
+      } catch (err) {
+        console.error('Screenshot poll error:', err);
+      }
+    }
+
+    // Load config from server
+    fetch('/api/config')
+      .then(r => r.json())
+      .then(config => {
+        document.getElementById('portalDisplay').textContent = config.portalUrl || 'Not configured';
+      })
+      .catch(() => {
+        document.getElementById('portalDisplay').textContent = 'Error loading config';
+      });
+  </script>
+</body>
+</html>
