@@ -36,16 +36,31 @@ export function getEnvConfig(): EnvConfig {
 }
 
 /**
+ * Check if Browserbase is configured for cloud browser automation
+ */
+export function useBrowserbase(): boolean {
+  return !!(process.env.BROWSERBASE_API_KEY && process.env.BROWSERBASE_PROJECT_ID);
+}
+
+/**
  * Creates and initializes a Stagehand instance for testing
  * Automatically loads cached auth cookies if available
+ * Uses Browserbase in production, local Chrome in development
  */
 export async function createStagehand(): Promise<Stagehand> {
+  const cloudMode = useBrowserbase();
+  
   const stagehand = new Stagehand({
-    env: "LOCAL",
+    env: cloudMode ? "BROWSERBASE" : "LOCAL",
     verbose: 0,
-    localBrowserLaunchOptions: {
-      headless: true,
-    },
+    ...(cloudMode ? {
+      apiKey: process.env.BROWSERBASE_API_KEY,
+      projectId: process.env.BROWSERBASE_PROJECT_ID,
+    } : {
+      localBrowserLaunchOptions: {
+        headless: true,
+      },
+    }),
   });
 
   await stagehand.init();

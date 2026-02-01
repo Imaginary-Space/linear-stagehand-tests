@@ -51,6 +51,9 @@ async function main() {
 
   // Start server
   const port = parseInt(env.PORT, 10);
+  const useBrowserbase = !!(env.BROWSERBASE_API_KEY && env.BROWSERBASE_PROJECT_ID);
+  const browserMode = useBrowserbase ? "Browserbase (cloud)" : "Local Chrome (headless)";
+  
   app.listen(port, () => {
     console.log(`
 ╔═══════════════════════════════════════════════════════════════╗
@@ -62,7 +65,7 @@ async function main() {
 ║  Health:          GET /webhooks/health                        ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Portal URL: ${env.PORTAL_URL.substring(0, 47).padEnd(49)}║
-║  Browser: Local Chrome (headless)                             ║
+║  Browser: ${browserMode.padEnd(51)}║
 ╚═══════════════════════════════════════════════════════════════╝
     `);
   });

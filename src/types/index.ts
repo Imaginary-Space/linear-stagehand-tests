@@ -12,6 +12,9 @@ export const EnvSchema = z.object({
   LINEAR_WEBHOOK_SECRET: z.string().min(1, "LINEAR_WEBHOOK_SECRET is required"),
   LINEAR_API_KEY: z.string().min(1, "LINEAR_API_KEY is required for posting comments"),
   LINEAR_TEST_ID: z.string().optional(), // Default issue for test comments (e.g., "FEL-395")
+  // Browserbase for cloud browser automation (required for production)
+  BROWSERBASE_API_KEY: z.string().optional(),
+  BROWSERBASE_PROJECT_ID: z.string().optional(),
   PORT: z.string().default("3000"),
 });
 

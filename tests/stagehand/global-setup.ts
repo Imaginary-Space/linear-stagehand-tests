@@ -73,13 +73,25 @@ export async function setup() {
     }
   }
 
+  // Use Browserbase for cloud deployments, local Chrome for development
+  const useBrowserbase = !!(process.env.BROWSERBASE_API_KEY && process.env.BROWSERBASE_PROJECT_ID);
+  
   const stagehand = new Stagehand({
-    env: "LOCAL",
+    env: useBrowserbase ? "BROWSERBASE" : "LOCAL",
     verbose: 0,
-    localBrowserLaunchOptions: {
-      headless: true,
-    },
+    ...(useBrowserbase ? {
+      apiKey: process.env.BROWSERBASE_API_KEY,
+      projectId: process.env.BROWSERBASE_PROJECT_ID,
+    } : {
+      localBrowserLaunchOptions: {
+        headless: true,
+      },
+    }),
   });
+  
+  if (useBrowserbase) {
+    console.log("  → Using Browserbase for cloud browser automation");
+  }
 
   try {
     await stagehand.init();
